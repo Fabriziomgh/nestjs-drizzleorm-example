@@ -138,13 +138,28 @@ Ejemplo: seed rápido (snippet)
 ```ts
 // ...existing code...
 // filepath: src/db/seed.ts
-const usersToInsert = Array(200)
-  .fill(null)
-  .map(() => ({
-    name: faker.person.fullName(),
-    email: faker.internet.email().toLowerCase(),
-  }));
-await db.insert(schema.users).values(usersToInsert);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const db = drizzle(pool, { schema }) as DrizzleDB;
+
+async function main() {
+  const usersToInsert = Array(COUNT)
+    .fill(null)
+    .map(() => ({
+      name: faker.person.fullName(),
+      email: faker.internet.email().toLowerCase(),
+    }));
+
+  try {
+    await db.insert(schema.users).values(usersToInsert);
+  } catch (error) {
+    console.log(error);
+  } finally {
+    await pool.end();
+  }
+}
 ```
 
 ## Uso en UsersService (CRUD)
@@ -228,7 +243,3 @@ curl -X POST http://localhost:3000/users \
 - Generar migración: pnpm run db:generate
 - Aplicar migración: pnpm run db:migrate
 - Seed: pnpm run db:seed
-
-## Contacto
-
-Archivo base y snippets extraídos del codebase del repo. Para ampliaciones (relaciones, transacciones, testing e2e) se puede documentar la estrategia específica a seguir.
